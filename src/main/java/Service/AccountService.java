@@ -11,12 +11,27 @@ public class AccountService implements AccountServiceInt {
     }
 
     /**
+     * This method checks whether a given string is just whitespace.
+     * @param str - a String object.
+     * @return true if all characters are whitespace, false otherwise.
+     */
+    private boolean whiteSpaceChecker(String str) {
+        for (char ch : str.toCharArray()) {
+            if (!Character.isWhitespace(ch)) return false;
+        }
+        return true;
+    }
+    /**
      * This method creates a new account, given a valid username and password.
      * @param account - information for a to-be-created account
      * @return information of newly created account.
      */
     public Account createAccount(Account account) {
-        return accountDAO.createAccount(account.getUsername(), account.getPassword());
+        // username and password must be valid, and username must be unique
+        if ((account.getUsername().length() > 0) && (!whiteSpaceChecker(account.getUsername())) && (account.getPassword().length() >= 4) && (!whiteSpaceChecker(account.getPassword())) && (AccountDAO.findAccountByUsername(account.getUsername()) == null)) {
+            return accountDAO.createAccount(account.getUsername(), account.getPassword());
+        }
+        return null;
     }
 
     /**

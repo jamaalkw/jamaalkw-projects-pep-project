@@ -10,19 +10,6 @@ import Util.ConnectionUtil;
 
 public class MessageDAO implements MessageDAOInt {
     /**
-     * This method checks whether a given string is just whitespace.
-     * @param str - a String object.
-     * @return true if all characters are whitespace, false otherwise.
-     */
-    private boolean whiteSpaceChecker(String str) {
-        for (char c : str.toCharArray()) {
-            if (!Character.isWhitespace(c)) return false;
-        }
-        return true;
-    }
-
-
-    /**
      * This method creates a new message with given information.
      * @param posted_by - id of account that posted the message.
      * @param message_text - contents of message.
@@ -30,27 +17,24 @@ public class MessageDAO implements MessageDAOInt {
      * @return newly created message.
      */
     public Message createMessage(int posted_by, String message_text, long time_posted_epoch) {
-        // only create message if text is valid and account used exists
-        if (((message_text.length() <= 255) && (!whiteSpaceChecker(message_text))) && (AccountDAO.findAccountById(posted_by) != null)) {
-            Connection connection = ConnectionUtil.getConnection();
-            try {
-                String sql = "INSERT INTO message(posted_by, message_text, time_posted_epoch) VALUES(?, ?, ?);" ;
-                PreparedStatement preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+        Connection connection = ConnectionUtil.getConnection();
+        try {
+            String sql = "INSERT INTO message(posted_by, message_text, time_posted_epoch) VALUES(?, ?, ?);" ;
+            PreparedStatement preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
 
-                preparedStatement.setInt(1, posted_by);
-                preparedStatement.setString(2, message_text);
-                preparedStatement.setLong(3, time_posted_epoch);
-                
-                preparedStatement.executeUpdate();
+            preparedStatement.setInt(1, posted_by);
+            preparedStatement.setString(2, message_text);
+            preparedStatement.setLong(3, time_posted_epoch);
+            
+            preparedStatement.executeUpdate();
 
-                ResultSet rs = preparedStatement.getGeneratedKeys();
-                if(rs.next()){
-                    int message_id = (int) rs.getInt(1);
-                    return new Message(message_id, posted_by, message_text, time_posted_epoch);
-                }
-            } catch(SQLException e){
-                System.out.println(e.getMessage());
+            ResultSet rs = preparedStatement.getGeneratedKeys();
+            if(rs.next()){
+                int message_id = (int) rs.getInt(1);
+                return new Message(message_id, posted_by, message_text, time_posted_epoch);
             }
+        } catch(SQLException e){
+            System.out.println(e.getMessage());
         }
         return null;
     }
@@ -94,28 +78,25 @@ public class MessageDAO implements MessageDAOInt {
      * @return updated message.
      */
     public Message updateMessageById(int id, String updated_message_text) {
-        // only update message if updated text is valid and current message exists
-        if (((updated_message_text.length() <= 255) && (!whiteSpaceChecker(updated_message_text))) && (getMessageById(id) != null)) {
-            Message oldMessage = getMessageById(id);
-            Connection connection = ConnectionUtil.getConnection();
-            try {
+        Message oldMessage = getMessageById(id);
+        Connection connection = ConnectionUtil.getConnection();
+        try {
+        
+            String sql = "UPDATE message SET message_text = ? WHERE message_id = ?;" ;
+            PreparedStatement preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+
+            preparedStatement.setString(1, updated_message_text);
+            preparedStatement.setInt(2, id);
             
-                String sql = "UPDATE message SET message_text = ? WHERE message_id = ?;" ;
-                PreparedStatement preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+            preparedStatement.executeUpdate();
 
-                preparedStatement.setString(1, updated_message_text);
-                preparedStatement.setInt(2, id);
-                
-                preparedStatement.executeUpdate();
-
-                ResultSet rs = preparedStatement.getGeneratedKeys();
-                if(rs.next()) {
-                    return new Message(id, oldMessage.getPosted_by(), updated_message_text, oldMessage.getTime_posted_epoch());
-                }
-                
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            ResultSet rs = preparedStatement.getGeneratedKeys();
+            if(rs.next()) {
+                return new Message(id, oldMessage.getPosted_by(), updated_message_text, oldMessage.getTime_posted_epoch());
             }
+            
+        } catch(SQLException e) {
+            System.out.println(e.getMessage());
         }
         return null;
     }
@@ -182,23 +163,20 @@ public class MessageDAO implements MessageDAOInt {
      * @param id - id of message.
      */
     public Message deleteMessageById(int id) {
-        // only update message if updated text is valid and current message exists
-        if (getMessageById(id) != null) {
-            Connection connection = ConnectionUtil.getConnection();
-            try {
-                Message deleted_message = getMessageById(id);
+        Connection connection = ConnectionUtil.getConnection();
+        try {
+            Message deleted_message = getMessageById(id);
 
-                String sql = "DELETE FROM message WHERE message_id = ?;" ;
-                PreparedStatement preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+            String sql = "DELETE FROM message WHERE message_id = ?;" ;
+            PreparedStatement preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
 
-                preparedStatement.setInt(1, id);
-                
-                preparedStatement.executeUpdate();
+            preparedStatement.setInt(1, id);
+            
+            preparedStatement.executeUpdate();
 
-                return deleted_message;
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
-            }
+            return deleted_message;
+        } catch(SQLException e) {
+            System.out.println(e.getMessage());
         }
         return null;
     }
